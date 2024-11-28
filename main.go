@@ -12,11 +12,13 @@ type FileConfig struct {
 	ext  string
 	size int64
 	list bool
+	del  bool
 }
 
 func main() {
 	root := flag.String("root", ".", "Root directory to start scanning")
 	list := flag.Bool("list", false, "List files only")
+	del := flag.Bool("delete", false, "Delete files")
 	ext := flag.String("ext", "", "File extension to search for")
 	size := flag.Int64("size", 0, "Minimum file size to search for")
 	flag.Parse()
@@ -25,6 +27,7 @@ func main() {
 		ext:  *ext,
 		size: *size,
 		list: *list,
+		del:  *del,
 	}
 
 	if err := run(*root, os.Stdout, c); err != nil {
@@ -50,6 +53,10 @@ func run(root string, out io.Writer, c FileConfig) error {
 			return listFile(path, out)
 		}
 
+		if c.del {
+			return delFile(path)
+		}
+
 		// List is the default option if nothing else was set
 		return listFile(path, out)
 	})
@@ -58,4 +65,9 @@ func run(root string, out io.Writer, c FileConfig) error {
 func listFile(path string, out io.Writer) error {
 	_, err := fmt.Fprintln(out, path)
 	return err
+}
+
+func delFile(filePath string) error {
+	return os.Remove(filePath)
+
 }

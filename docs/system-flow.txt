@@ -66,3 +66,97 @@ err: Of type error containing
 
  //  Formats a string as a quoted string literal, escaping any special characters (e.g., newlines, tabs, or quotes). %q
  // %s is the default format for strings
+
+
+
+ // test configuration
+
+ tc.cfg.ext = ".log"       // Files with the .log extension should be deleted.
+ tc.nDelete = 5            // 5 .log files will be created (to be deleted).
+ tc.extNoDelete = ".gz"    // Files with the .gz extension should not be deleted.
+ tc.nNoDelete = 5          // 5 .gz files will be created (to remain intact).
+
+tempDir is invoked
+map[string]int{
+    ".log": 5, // Create 5 .log files.
+    ".gz":  5, // Create 5 .gz files.
+}
+
+
+Directory Contents (Before Running run) The createTempDir function creates the following structure
+
+/tmp/walktest/
+  file1.log
+  file2.log
+  file3.log
+  file4.log
+  file5.log
+  file1.gz
+  file2.gz
+  file3.gz
+  file4.gz
+  file5.gz
+
+  5 .log files are created with dummy content.
+  5 .gz files are created with dummy content.
+
+
+FileConfig{
+    ext: ".log", // Target .log files for deletion.
+    del: true,   // Enable deletion mode.
+}
+
+
+
+Without t.Helper()
+Here’s a helper function and test:
+
+func createTempDir(t *testing.T) string {
+	tempDir, err := os.MkdirTemp("", "test")
+	if err != nil {
+		t.Fatal("Failed to create temporary directory")
+	}
+	return tempDir
+}
+
+func TestExample(t *testing.T) {
+	tempDir := createTempDir(t)
+	defer os.RemoveAll(tempDir)
+}
+Now imagine os.MkdirTemp fails. The output will look like this:
+
+--- FAIL: TestExample (0.00s)
+    helper.go:4: Failed to create temporary directory
+The error points to helper.go:4 (inside createTempDir).
+This tells you that something failed inside createTempDir,
+but it doesn’t immediately tell you which test case caused the issue (TestExample in this case).
+
+With t.Helper()
+Now add t.Helper() to the helper function:
+
+func createTempDir(t *testing.T) string {
+	t.Helper() // Mark this as a helper function
+	tempDir, err := os.MkdirTemp("", "test")
+	if err != nil {
+		t.Fatal("Failed to create temporary directory")
+	}
+	return tempDir
+}
+
+func TestExample(t *testing.T) {
+	tempDir := createTempDir(t)
+	defer os.RemoveAll(tempDir)
+}
+If os.MkdirTemp fails, the output will look like this:
+
+--- FAIL: TestExample (0.00s)
+    example_test.go:9: Failed to create temporary directory
+The error now points to example_test.go:9 (inside TestExample), not createTempDir.
+This is more helpful because it shows which test case failed (TestExample).
+
+
+The t.Helper() function:
+
+Improves error reporting by attributing failures to the calling test function, not the helper.
+Keeps the test output clean and focused on the relevant test case.
+Marks functions that assist in testing (e.g., setup or assertions) as secondary.
