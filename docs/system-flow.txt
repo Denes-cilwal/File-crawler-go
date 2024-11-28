@@ -1,0 +1,68 @@
+- When we’re building a tool that’s supposed to work on multiple platforms,
+- we also have to pay special attention to how we manipulate paths and file
+- names to ensure our tool works appropriately no matter where it’s run.
+
+- For example, Windows uses a backslash \ as a path separator,
+- such as C:\WINDOWS\SYSTEM, while most variations of UNIX use the forward slash
+- / instead, as in /usr/lib. In these scenarios, hard-coding paths and file
+- names into the program can lead to errors or unexpected results.
+
+
+
+File path package
+To avoid these complications, Go provides the filepath package to manipulate paths,
+ensuring compatibility across different operating systems. We’ll use this package
+to develop a command-line tool called walk, which crawls into file system
+directories looking for specific files. When the tool finds the files
+it’s looking for, it can list, archive, or delete them. As we develop this
+tool, we’ll apply the skills required to handle file system objects in our
+own programs, such as creating directories, copying and deleting files, and
+handling logs and compressed files. We’ll end up with a useful tool that
+helps us back up and clean up file system
+
+
+
+This initial version accepts four command-line parameters:
+
+-root: The root of the directory tree to start the search. The default is the current directory.
+-list: List files found by the tool. When specified, no other actions will be executed.
+-ext: File extension to search. When specified, the tool will only match files with this extension.
+-size: Minimum file size in bytes. When specified, the tool will only match files whose size is larger than this value.
+path/filepath: To handle file paths appropriately across different operating systems.
+
+
+we create the run() function. Its input parameters are:
+
+root: A string representing the root directory to start the search.
+out of type io.Writer interface: Representing the output destination.
+cfg of custom type config: For the remaining optional parameters.
+By using the io.Writer interface as the output destination, we can print results to the STDOUT in the program and to a bytes.Buffer when testing, which makes it easier to verify the output.
+
+
+The filepath package uses either forward slashes or backslashes, depending on the operating system.
+
+
+
+In the run() function, we define the logic to descend into the directory identified by the flag root and find all the files and subdirectories under it. The package filepath provides
+a function named Walk() that does exactly that.
+
+The filepath.Walk(root string, walkFn WalkFunc) function finds all the files and directories under root, and executes the function walkFn to each of them.
+The function walkFn is a function of type filepath.WalkFunc defined with the signature func(path string, info os.FileInfo, err error) error, where the arguments represent:
+
+path: A string representing the path of the file or directory currently processed by Walk().
+info: Of type os.FileInfo containing metadata about the file or directory named by path, such as name, size, permissions, and others.
+err: Of type error containing
+ the error in case Walk() has an issue walking to that specific file or directory.
+
+
+
+ The buffer in this context is an instance of bytes.Buffer, which implements the io.Writer interface. This allows you to:
+
+ Capture Output:
+
+ The run function writes output to an io.Writer.
+ By passing a buffer instead of directly writing to os.Stdout,
+ you can capture and store the output for further inspection in your test cases.
+
+ //  Formats a string as a quoted string literal, escaping any special characters (e.g., newlines, tabs, or quotes). %q
+ // %s is the default format for strings
